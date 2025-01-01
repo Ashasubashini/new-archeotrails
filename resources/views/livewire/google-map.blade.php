@@ -1,4 +1,15 @@
 <div class="p-4">
+    <div id="currentLocationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="bg-white p-6 rounded-lg max-w-md mx-auto mt-20">
+            <h3 class="text-lg font-bold mb-4">Find Nearby Places</h3>
+            <input id="currentLocationInput" type="text" placeholder="Enter your current location" 
+                class="p-3 border rounded-lg w-full mb-4">
+            <div class="flex justify-end space-x-4">
+                <button onclick="closeLocationModal()" class="p-2 border rounded-lg">Skip</button>
+                <button onclick="showNearbyPlaces()" class="p-2 bg-blue-500 text-white rounded-lg">Show Places</button>
+            </div>
+        </div>
+    </div>
     <div class="flex justify-center space-x-4 mb-8">
         <input id="startLocation" type="text" placeholder="Enter your starting location"
             class="p-3 border rounded-lg w-64">
@@ -28,6 +39,7 @@
     let directionsRenderer;
     let startAutocomplete;
     let endAutocomplete;
+    let currentLocationAutocomplete;
     let map;
 
     const placesList = document.getElementById("places-list");
@@ -58,6 +70,45 @@
                 country: "LK"
             }
         });
+        currentLocationAutocomplete = new google.maps.places.Autocomplete(document.getElementById("currentLocationInput"), {
+        componentRestrictions: { country: "LK" }
+        });
+
+        document.getElementById("currentLocationModal").classList.remove("hidden");
+    }
+
+    function closeLocationModal() {
+        document.getElementById("currentLocationModal").classList.add("hidden");
+    }
+
+    function showNearbyPlaces() {
+        const place = currentLocationAutocomplete.getPlace();
+        if (!place || !place.geometry) {
+            loginMessage.textContent = "Please select a valid location.";
+            loginMessage.classList.remove("hidden");
+            return;
+        }
+
+        // Clear previous markers and directions
+        directionsRenderer.setMap(null);
+        map.setCenter(place.geometry.location);
+        map.setZoom(12);
+
+    // Draw 20km radius circle
+        const circle = new google.maps.Circle({
+            map: map,
+            center: place.geometry.location,
+            radius: 20000,
+            fillColor: '#FF000050',
+            strokeColor: '#FF0000'
+        });
+
+        // Clear previous place cards
+        placesList.innerHTML = '';
+
+        // Find and display nearby places
+        findLocationsWithinRadius(samplePlaces, [place.geometry.location], 20);
+        closeLocationModal();
     }
 
     function getDirection() {
